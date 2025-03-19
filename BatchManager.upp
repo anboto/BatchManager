@@ -1,0 +1,18 @@
+description "Lanzador de lotes de programas\377";
+
+uses
+	CtrlLib,
+	SysInfo,
+	Controls4U;
+
+file
+	main.cpp,
+	initButtons.cpp,
+	main.h,
+	BatchManager.lay,
+	main.rc,
+	main.iml;
+
+mainconfig
+	"" = "GUI";
+

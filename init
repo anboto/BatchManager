@@ -1,0 +1,7 @@
+#ifndef _BatchManager_icpp_init_stub
+#define _BatchManager_icpp_init_stub
+#include "CtrlLib/init"
+#include "SysInfo/init"
+#include "Candidates/init"
+#include "SENWave/Common/init"
+#endif
