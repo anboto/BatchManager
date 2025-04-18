@@ -283,7 +283,7 @@ bool Main::Init() {
 	left3.maxSimult.WhenAction();
 	
 	if (IsNull(~left2.pendTime))
-		left2.pendTime <<= "24:00:00";
+		left2.pendTime <<= "240:00:00";
 	
 	OnCPUSpin();
 	
@@ -495,23 +495,32 @@ void Main::DoDrop(String name) {
 	//Save();
 }
 
-void Main::OnPendingsDelete() {
-	int row = left2.pending.GetCursor();
-	if (row < 0) 
-		return;
-	if (!PromptYesNo(t_("Do you want to remove selected task?")))
-		return;
-	
-	left2.pending.Remove(row);
-	UpdateLabs();
-}
-
 Vector<int> GetSelectedRows(const ArrayCtrl &array) {
 	Vector<int> ret;
 	for(int row = 0; row < array.GetCount(); row++)
 		if(array.IsSelected(row))
 			ret << row;
 	return ret;
+}
+
+void Main::OnPendingsDelete() {
+	Vector<int> sels = GetSelectedRows(left2.pending);
+	if (sels.IsEmpty())
+		return;
+	
+	String msg;
+	if (sels.size() == 1)
+		msg = t_("Do you want to remove selected task?");
+	else
+		msg = t_("Do you want to remove selected tasks?");
+	
+	if (!PromptYesNo(msg))
+		return;
+	
+	for (int i = sels.size()-1; i >= 0; --i)
+		left2.pending.Remove(sels[i]);
+	
+	UpdateLabs();
 }
 
 void Main::OnPendingsCPU() {
@@ -676,7 +685,7 @@ void Main::OnSel(int who) {
 String FormatBytes(uint64 bytes) {
     static const char* suffixes[] = { "b", "kb", "Mb", "Gb", "Tb" };
     int suffixIndex = 0;
-    double size = bytes;
+    double size = (double)bytes;
 
     while (size >= 1024 && suffixIndex < 4) {
         size /= 1024;
@@ -912,7 +921,7 @@ void Main::TimerFun() {
 		command = AppendFileName(String(~batch.folder), String(~batch.file)); 
 		command << " " << ~batch.args;
 	}
-	int maxTime = StringToSeconds(String(~batch.maxTime));
+	int maxTime = (int)StringToSeconds(String(~batch.maxTime));
 	batch.process.Start(command, nullptr, nullptr, -1, maxTime, maxTime);
 	batch.isStarted = true;
 	batch.isEnded = false;
