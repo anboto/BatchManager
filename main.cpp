@@ -772,7 +772,10 @@ void Main::TimerFun() {
 					batch.sumMem += memory;
 					batch.numMem++;
 				}
-				left1.processing.Set(processingRow, proc(idMem), FormatBytes(memory) + "/" + FormatBytes(batch.sumMem/batch.numMem));
+				if (batch.numMem > 0)
+					left1.processing.Set(processingRow, proc(idMem), FormatBytes(memory) + "/" + FormatBytes(batch.sumMem/batch.numMem));
+				else
+					left1.processing.Set(processingRow, proc(idMem), FormatBytes(memory));
 			}
 		} else {
 			batch.butStop.Enable(false);
