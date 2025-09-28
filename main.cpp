@@ -278,7 +278,7 @@ bool Main::Init() {
 	left3.maxSimult <<= 0;
 	left3.maxSimult.MinMax(0, ~left3.maxCPU);
 	left3.maxSimult.Step(1, true);
-	left3.maxSimult.SetMajorTicks(int(numberOfProcessors/6)).SetMajorTicksSize(4).SetThickness(2);
+	left3.maxSimult.SetMajorTicks().SetMajorTicksSize(4).SetThickness(2);
 	left3.maxSimult.WhenAction = [&] {left3.maxSimultVal <<= ~left3.maxSimult;};
 	left3.maxSimult.WhenAction();
 	
