@@ -218,12 +218,12 @@ void Main::UpdateLabs() {
 			paused++;
 	}
 	if (paused == 0)
-		left1.labProcessing.SetText(Format(t_("Processing: %d"), left1.processing.GetCount()));
+		left1.labProcessing.SetText(F(t_("Processing: %d"), left1.processing.GetCount()));
 	else
-		left1.labProcessing.SetText(Format(t_("Processing: %d (paused: %d)"), left1.processing.GetCount(), paused));
+		left1.labProcessing.SetText(F(t_("Processing: %d (paused: %d)"), left1.processing.GetCount(), paused));
 	
-	left2.labPending.SetText(Format(t_("Pending: %d"), left2.pending.GetCount()));
-	left3.labDone.SetText(Format(t_("Done: %d"), left3.done.GetCount()));
+	left2.labPending.SetText(F(t_("Pending: %d"), left2.pending.GetCount()));
+	left3.labDone.SetText(F(t_("Done: %d"), left3.done.GetCount()));
 }
 
 void Main::OnCPUSpin() {
@@ -290,7 +290,7 @@ bool Main::Init() {
 	procid = 0;
 	
 	if (pendingToJsonize.GetCount() > 0) {
-		if (PromptYesNo(Format(t_("There are %d pending processes from previous execution. Do you want to run them?"), pendingToJsonize.GetCount()))) {
+		if (PromptYesNo(F(t_("There are %d pending processes from previous execution. Do you want to run them?"), pendingToJsonize.GetCount()))) {
 			for (int i = 0; i < pendingToJsonize.GetCount(); ++i)
 				DoDrop(pendingToJsonize[i]);
 		}
@@ -452,10 +452,10 @@ void Main::DoDrop(String name) {
 	if (GetFileExt(name) == ".bat") {
 		String str = LoadFile(name);
 		if (str.IsEmpty()) 
-			if (!PromptOKCancel(Format(t_("File %s is empty.&") + String(t_("Do you want to continue?")), DeQtf(name))))
+			if (!PromptOKCancel(F(t_("File %s is empty.&") + String(t_("Do you want to continue?")), DeQtf(name))))
 				return;
 		if (ToLower(str).Find("pause") >= 0) {
-			if (!PromptOKCancel(Format(t_("File %s has a PAUSE command.&") + String(t_("Do you want to continue?")), DeQtf(name))))
+			if (!PromptOKCancel(F(t_("File %s has a PAUSE command.&") + String(t_("Do you want to continue?")), DeQtf(name))))
 				return;
 		}
 	}
@@ -464,7 +464,7 @@ void Main::DoDrop(String name) {
 	String folder = GetFileFolder(name);
 	
 	if (ToLower(name).EndsWith(".dat")) {
-		args = Format("-orca -numtries 10 -timelog 10 -rf \"%s\" \"%s\"", name, ForceExt(name, ".sim"));
+		args = F("-orca -numtries 10 -timelog 10 -rf \"%s\" \"%s\"", name, ForceExt(name, ".sim"));
 		name = "bemrosetta_cl";
 	} 
 
@@ -691,7 +691,7 @@ String FormatBytes(uint64 bytes) {
         size /= 1024;
         suffixIndex++;
     }
-    return Format("%.1f %s", size, suffixes[suffixIndex]);
+    return F("%.1f %s", size, suffixes[suffixIndex]);
 }
 
 void Main::TimerFun() {
@@ -705,8 +705,8 @@ void Main::TimerFun() {
 		const double btoGb = 1024*1024*1024;
 		double dtotal = total/btoGb;
 		double dused = (total-available)/btoGb;
-		left3.memTotal = Format("%.1f", dtotal);
-		left3.memUsed  = Format("%.1f", dused);
+		left3.memTotal = F("%.1f", dtotal);
+		left3.memUsed  = F("%.1f", dused);
 		double ratioMem = dused/dtotal;
 		Color col;
 		if (ratioMem < 0.7)
@@ -791,11 +791,11 @@ void Main::TimerFun() {
 			} else {
 				switch(batch.process.GetStatus()) {
 				case LocalProcessX::RUNNING:	 	break;
-				case LocalProcessX::STOP: 	 	 	msg = Format(t_("Program ended. Exit code %d"), batch.process.GetExitCode());	break;
+				case LocalProcessX::STOP: 	 	 	msg = F(t_("Program ended. Exit code %d"), batch.process.GetExitCode());	break;
 				case LocalProcessX::STOP_USER: 	 	msg = t_("Program stopped by user");			break;
 				case LocalProcessX::STOP_TIMEOUT:	msg = t_("Execution time exceeded (timeout)");	break;
 				case LocalProcessX::STOP_NORESPONSE:msg = t_("Application does not respond");		break;	
-				default:						 	throw Exc(Format("Unknown process status %d", batch.process.GetStatus()));
+				default:						 	throw Exc(F("Unknown process status %d", batch.process.GetStatus()));
 				}
 			}
 			left3.done.Insert(0);				// Adds at the beginning
@@ -805,7 +805,7 @@ void Main::TimerFun() {
 			left3.done.Set(0, done(idFolder), ~batch.folder);
 			left3.done.Set(0, done(idBegin), ~batch.begin);
 			left3.done.Set(0, done(idEnd), GetSysTime());
-			left3.done.Set(0, done(idDuration), Format("%s (%d)", SecondsToString(batch.process.Seconds(), 0, false, false, true, false, true), batch.process.Seconds()));
+			left3.done.Set(0, done(idDuration), F("%s (%d)", SecondsToString(batch.process.Seconds(), 0, false, false, true, false, true), batch.process.Seconds()));
 			left3.done.Set(0, done(idUser), ~batch.user);
 			left3.done.Set(0, done(idComputer), ~batch.comp);
 			left3.done.Set(0, done(idTime), SecondsToString(batch.process.GetMaxRunTime(), 0, false, false, true, false, true));
@@ -814,7 +814,7 @@ void Main::TimerFun() {
 				str = "-";
 			else {
 				uint64 bytes = batch.sumMem/batch.numMem;
-				str = Format("%s (%s)", FormatBytes(bytes), Format64(bytes));
+				str = F("%s (%s)", FormatBytes(bytes), Format64(bytes));
 			}
 			left3.done.Set(0, done(idMemory), str);
 				
