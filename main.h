@@ -32,6 +32,7 @@ public:
 	Batch();
 	virtual ~Batch() {}
 	
+	void Start(bool log);
 	void OnStop();
 	void Stop();
 	void OnPause();
@@ -39,12 +40,19 @@ public:
 	void OnLater();
 	bool OnProcess(double elapsed, const String &out, bool isEnd, bool &resetTimeout);
 	
+	void Log(uint64 memory);
+	
 	int batId;
 	bool isStarted;
 	bool isEnded;
 	LocalProcessX process;
 	uint64 sumMem = 0;
 	int numMem = 0;
+	
+	String fileLog;
+	Time prevLog = Null;
+	String pendLog;
+	bool deleted;
 };
 
 class Main : public TopWindow {

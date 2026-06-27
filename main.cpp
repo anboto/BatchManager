@@ -21,7 +21,7 @@ GUI_APP_MAIN {
 	}
 	
 	if (GetLastError() == ERROR_ALREADY_EXISTS) {
-		if (!PromptOKCancel(t_("Program is already running.") + String("&") + t_("Do you want to continue?"))) {
+		if (!PromptOKCancel(t_("Program is already running.") + String("&") + t_("Do you want to open a new one?"))) {
 			CloseHandle(mutex);
 			return;
 		}
@@ -74,6 +74,65 @@ Batch::Batch() : isStarted(false), isEnded(false) {
 	butLater.WhenAction = THISBACK(OnLater);
 }
 
+void Batch::Start(bool log) {
+	String folder = ~editfolder;
+	String file   = ~editfile;
+	String driveLetter = "";
+	if (folder[1] == ':')
+		driveLetter = folder.Left(2) + " && ";
+	String command;
+	if (GetFileExt(file) == ".bat") 
+		command = String("cmd.exe /c \"") + driveLetter + String("cd \"") + folder + "\" && \"" + file + "\"\"";
+	else {
+		if (FileExists(AFX(folder, file))) 
+			command = AppendFileName(String(~editfolder), String(~editfile)); 
+		else
+			command = file	;
+		command << " " << ~args;
+	}
+	
+	int mxTime = (int)StringToSeconds(String(~maxTime));
+	process.Start(command, nullptr, nullptr, -1, mxTime, mxTime);
+	isStarted = true;
+	isEnded = false;
+	
+	if (log) {
+		fileLog = ForceExt(AFX(folder, file), F("_log%02d.csv", batId));
+		deleted = !FileExists(fileLog);
+		if (!deleted)
+			deleted = FileDelete(fileLog);
+		String sep = ",";
+		pendLog = command + "\n";
+		pendLog += "Year" + sep + "Month" + sep + "Day" + sep + "Hour" + sep + "Min" + sep + "Sec" + sep + "RAM running" + sep + "RAM\n";
+	}	
+}
+
+void Batch::Log(uint64 memory) {
+	if (fileLog.IsEmpty())
+		return;
+	
+	if (!deleted)
+		deleted = FileDelete(fileLog);
+		
+	Time t = GetSysTime();
+	if (!IsNull(prevLog) && t - prevLog < 30)
+		return;
+	
+	prevLog = t;
+	String sep = ",";
+	
+	pendLog << FormatInt(t.year) << sep << FormatInt(t.month) <<  sep << FormatInt(t.day)    << sep << 
+			   FormatInt(t.hour) << sep << FormatInt(t.minute) << sep << FormatInt(t.second) << sep << 
+			   (process.IsPaused() ? "" : FormatInt64(memory)) << sep << 
+			   FormatInt64(memory) << "\n";
+	
+	if (!deleted)
+		return;
+	
+	if (FileStrAppend(fileLog, pendLog))
+		pendLog.Clear();
+}
+
 void Batch::OnStop() {
 	if(!PromptYesNo(t_("Do you want to stop the process?")))
 		return;
@@ -108,7 +167,7 @@ void Batch::OnPause() {
 }
 
 void Batch::OnFolder() {
-	LaunchFile(String(~folder));
+	LaunchFile(String(~editfolder));
 }
 
 bool Batch::OnProcess(double, const String &out, bool isEnd, 	bool &resetTimeout) {
@@ -258,6 +317,7 @@ void Main::Jsonize(JsonIO& json) {
 		("newTime", 	left2.pendTime)
 		("pending", 	pendingToJsonize)
 		("done", 		doneData)
+		("opLog",		left3.opLog)
 	;
 	if (json.IsLoading()) {
 		for (int i = 0; i < doneData.GetCount(); ++i)
@@ -318,6 +378,7 @@ void Main::Load() {
 void Main::Save() {
 	StoreAsJsonFile(*this, configFile, true);
 }
+
 
 void Main::ClearRealized() {
 	left3.done.Clear();
@@ -440,15 +501,11 @@ bool Main::Key(dword key, int count) {
 }
 
 void Main::DoDrop(String name) {
-	/*if (DirectoryExists(name)) {
-		String strExe = AppendFileName(name, "SENERWave_exe.exe");
-		if (FileExists(strExe))
-			name = strExe;
-		else
-			return;
-	}*/
-	if (GetFileExt(name) != ".bat" && GetFileExt(name) != ".exe" && GetFileExt(name) != ".dat") 
-		return;
+	String args;
+	String folder = GetFileFolder(name);
+	String file = GetFileTitle(name);
+	String ext = GetFileExt(name).Mid(1);
+	
 	if (GetFileExt(name) == ".bat") {
 		String str = LoadFile(name);
 		if (str.IsEmpty()) 
@@ -458,15 +515,27 @@ void Main::DoDrop(String name) {
 			if (!PromptOKCancel(F(t_("File %s has a PAUSE command.&") + String(t_("Do you want to continue?")), DeQtf(name))))
 				return;
 		}
+	} else if (GetFileExt(name) == ".bat")
+		;
+	else {
+		struct HandledTypes {
+			String pattern, command, args;
+		};
+		Array<HandledTypes> data = {{"*.dat", "bemrosetta_cl", "-orca -numtries 10 -timelog 10 -rf \"#PATH#\" \"#FOLDER#\\#FILE#.sim\""}};		
+		
+		for (const HandledTypes &h : data) {
+			if (PatternMatch(h.pattern, name)) {
+				args = h.args;				
+				args.Replace("#PATH#", name);
+				args.Replace("#FOLDER#", folder);
+				args.Replace("#FILE#", file);
+				args.Replace("#EXT#", ext);
+				name = h.command;
+			}
+		}
+		if (args.IsEmpty())
+			return;
 	}
-	String args;
-
-	String folder = GetFileFolder(name);
-	
-	if (ToLower(name).EndsWith(".dat")) {
-		args = F("-orca -numtries 10 -timelog 10 -rf \"%s\" \"%s\"", name, ForceExt(name, ".sim"));
-		name = "bemrosetta_cl";
-	} 
 
 	left2.pending.Add(procid, GetFileName(name), args, folder, GetUserName(), GetComputerName(), ~left2.pendCPU, ~left2.pendTime);
 	UpdateLabs();
@@ -476,8 +545,8 @@ void Main::DoDrop(String name) {
 	
 	batch.batId 	  = procid;
 	batch.id 	    <<= procid;
-	batch.file 		<<= GetFileName(name);
-	batch.folder 	<<= folder;
+	batch.editfile 	<<= GetFileName(name);
+	batch.editfolder<<= folder;
 	batch.args 		<<= args;
 	batch.maxCPU 	<<= ~left2.pendCPU;	
 	batch.maxTime	<<= ~left2.pendTime;	
@@ -629,8 +698,8 @@ void Main::DoClose(bool prompt) {
 			for (i = 0; i < batches.GetCount(); ++i) {
 				if (batches[i].process.IsRunning()) {
 					batches[i].Stop();
-					String folder = ~batches[i].folder;
-					String file = ~batches[i].file;
+					String folder = ~batches[i].editfolder;
+					String file = ~batches[i].editfile;
 					pendingToJsonize << AppendFileName(folder, file);
 				}
 			}
@@ -683,7 +752,7 @@ void Main::OnSel(int who) {
 }
 
 String FormatBytes(uint64 bytes) {
-    static const char* suffixes[] = { "b", "kb", "Mb", "Gb", "Tb" };
+    static const char* suffixes[] = { "B", "kB", "MB", "GB", "TB" };
     int suffixIndex = 0;
     double size = (double)bytes;
 
@@ -768,6 +837,8 @@ void Main::TimerFun() {
 				left1.processing.Set(processingRow, proc(idTime), SecondsToString(batch.process.Seconds(), 0, false, false, true, false, true) + "/" + 
 													   SecondsToString(batch.process.GetMaxRunTime(), 0, false, false, true, false, true));
 				uint64 memory = batch.process.GetMemory();
+				if (left3.opLog)
+					batch.Log(memory);
 				if (!batch.process.IsPaused()) {
 					batch.sumMem += memory;
 					batch.numMem++;
@@ -787,7 +858,7 @@ void Main::TimerFun() {
 				batch.process.SetData("");
 				msg = t_("Program temporarily ended. It will restart later when a thread is available");
 				
-				DoDrop(AppendFileNameX(~batch.folder, ~batch.file));
+				DoDrop(AppendFileNameX(~batch.editfolder, ~batch.editfile));
 			} else {
 				switch(batch.process.GetStatus()) {
 				case LocalProcessX::RUNNING:	 	break;
@@ -800,9 +871,9 @@ void Main::TimerFun() {
 			}
 			left3.done.Insert(0);				// Adds at the beginning
 			left3.done.Set(0, done(idId), batch.batId);
-			left3.done.Set(0, done(idFile), ~batch.file);
+			left3.done.Set(0, done(idFile), ~batch.editfile);
 			left3.done.Set(0, done(idArgs), ~batch.args);
-			left3.done.Set(0, done(idFolder), ~batch.folder);
+			left3.done.Set(0, done(idFolder), ~batch.editfolder);
 			left3.done.Set(0, done(idBegin), ~batch.begin);
 			left3.done.Set(0, done(idEnd), GetSysTime());
 			left3.done.Set(0, done(idDuration), F("%s (%d)", SecondsToString(batch.process.Seconds(), 0, false, false, true, false, true), batch.process.Seconds()));
@@ -897,11 +968,10 @@ void Main::TimerFun() {
 	batch.begin <<= GetSysTime();	
 	batch.butPause.Enable(true);
 	batch.butStop.Enable(true);
-	String file 	= ~batch.file;
 	
 	left2.pending.Remove(idPendings);
 	
-	left1.processing.Add(batch.batId, ~batch.file, ~batch.args, ~batch.folder, 
+	left1.processing.Add(batch.batId, ~batch.editfile, ~batch.args, ~batch.editfolder, 
 						~batch.user, ~batch.comp, ~batch.maxCPU,
 						~batch.begin, ~batch.maxTime, "", t_("Running"));
 	left1.processing.SetCursor(left1.processing.GetCount() - 1);
@@ -913,20 +983,6 @@ void Main::TimerFun() {
 	//args << ~batch.file << ~batch.args << ~batch.folder << ~batch.begin << FormatInt(~batch.maxCPU) 
 	//	 << ~batch.user << ~batch.comp << ~batch.maxTime;					
 
-	String folder = ~batch.folder;
-	String driveLetter = "";
-	if (folder[1] == ':')
-		driveLetter = folder.Left(2) + " && ";
-	String command;
-	if (GetFileExt(file) == ".bat") 
-		command = String("cmd.exe /c \"") + driveLetter + String("cd \"") + folder + "\" && \"" + String(~batch.file) + "\"\"";
-	else {
-		command = AppendFileName(String(~batch.folder), String(~batch.file)); 
-		command << " " << ~batch.args;
-	}
-	int maxTime = (int)StringToSeconds(String(~batch.maxTime));
-	batch.process.Start(command, nullptr, nullptr, -1, maxTime, maxTime);
-	batch.isStarted = true;
-	batch.isEnded = false;
+	batch.Start(left3.opLog);
 	OnSel(0);
 }	
