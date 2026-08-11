@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright 2025 - 2026, the BatchManager author
 #include "main.h"
 
 #define IMAGECLASS Img2
@@ -23,34 +25,41 @@ String FormatBytes(uint64 bytes) {
     return F("%.1f %s", size, suffixes[suffixIndex]);
 }
 
-uint64 ScanBytes(const String& s) {
-    double value;
-    String unit;
 
-    CParser p(s);
-    value = p.ReadDouble();
-    unit = Trim(p.GetPtr());
+void AddToPATH(const Vector<String>& addFolders) {
+#ifdef PLATFORM_WIN32
+    const char pathsep = ';';
+    const bool case_sensitive = false;
+#else  // Linux and macOS
+    const char pathsep = ':';
+    const bool case_sensitive = true;
+#endif
 
-    if(unit.Find('b') >= 0)
-        throw Exc("Invalid unit '" + unit + "'. Lowercase 'b' denotes bits, not bytes.");
+    String oldpath = GetEnv("PATH");
+    Vector<String> existing = Split(oldpath, pathsep);
 
-    int power;
+    auto AlreadyThere = [&](const String& folder) {
+        for(const String& e : existing) {
+            if(case_sensitive ? (e == folder) : (ToUpper(e) == ToUpper(folder)))
+                return true;
+        }
+        return false;
+    };
+    String newpart;
+    for(const String& f : addFolders) {
+        if(f.IsEmpty() || AlreadyThere(f))
+            continue;
+        if(!newpart.IsEmpty())
+            newpart.Cat(pathsep);
+        newpart << f;
+        existing << f;	// avoid duplicates within addFolders itself too 
+    }
+    if(newpart.IsEmpty())
+        return;
 
-    if(unit == "B")
-        power = 0;
-    else if(unit == "kB")
-        power = 1;
-    else if(unit == "MB")
-        power = 2;
-    else if(unit == "GB")
-        power = 3;
-    else if(unit == "TB")
-        power = 4;
-    else
-        throw Exc("Unknown size unit: " + unit);
+    String newpath = newpart;
+    if(!oldpath.IsEmpty())
+        newpath << pathsep << oldpath;
 
-    while(power-- > 0)
-        value *= 1024.0;
-
-    return (uint64)(value + 0.5);   // round to nearest byte
+    SetEnv("PATH", newpath);
 }

@@ -13,7 +13,9 @@ file
 	Auxiliar.cpp,
 	BatchManager.lay,
 	main.rc,
-	main.iml;
+	main.iml,
+	help.tpp,
+	Copying;
 
 mainconfig
 	"" = "GUI";
