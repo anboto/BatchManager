@@ -464,6 +464,23 @@ void Main::DragAndDrop(Point p, PasteClip& d) {
 	}
 }
 
+void GetFirstToken(const String& text, String& command, String &args) {
+	CParser p(text);
+	
+	command.Clear();
+
+	p.SkipSpaces();
+
+	if(p.IsChar('"'))
+		command = p.ReadString();
+	else
+		command = p.ReadId();
+
+	p.SkipSpaces();
+
+	args = Trim(text.Mid(p.GetPos().ptr - text));
+}
+
 bool Main::Key(dword key, int count) {
 	if(key == K_CTRL_V) {
 		PasteClip& clip = Ctrl::Clipboard();
@@ -472,11 +489,17 @@ bool Main::Key(dword key, int count) {
 		if (clip.Accept("wtext") || clip.Accept("text")) {
 			String str = GetWString(clip).ToString();
 			files = Split(str, "\n");	
-		} else if (clip.Accept("files"))
+			for (String &file : files) {
+				file = Trim(file);
+				String command, args;
+				GetFirstToken(file, command, args);
+				DoDrop(file, args);
+			}
+		} else if (clip.Accept("files")) {
 			files = GetFiles(clip);
-		
-		for (const String &file : files)
-			DoDrop(file);
+			for (const String &file : files)
+				DoDrop(file);
+		}
 		Refresh();
 		
 		return true;
@@ -506,54 +529,57 @@ bool IsExecutable(const String& path) {
 }
 #endif
 
-void Main::DoDrop(String name) {
+void Main::DoDrop(String name, String args) {
 	name = Trim(name);
 	if (!FileExists(name))
 		return;
-	String args;
+	
 	String folder = GetFileFolder(name);
 	String file = GetFileTitle(name);
 	String ext = GetFileExt(name).Mid(1);
 
+	Array<HandledTypes> data = {{"*analysis.dat", "bemrosetta_cl", "-aqwa -r \"#PATH#\""},
+								{"*.dat",         "bemrosetta_cl", "-orca -numtries 10 -timelog 10 -rf \"#PATH#\" \"#FOLDER#\\#FILE#.sim\""}};		
+	
+	bool matched = false;
+	for (const HandledTypes &h : data) {
+		if (PatternMatch(h.pattern, name)) {
+			args = h.args;				
+			args.Replace("#PATH#", name);
+			args.Replace("#FOLDER#", folder);
+			args.Replace("#FILE#", file);
+			args.Replace("#EXT#", ext);
+			name = h.command;
+			
+			matched = true;
+			break;
+		}
+	}
+	if (!matched) {
 #ifdef PLATFORM_WIN32	
-	if (GetFileExt(name) == ".bat") {
+		if (GetFileExt(name) == ".bat") {
 #else
-	if (GetFileExt(name) == ".sh") {
+		if (GetFileExt(name) == ".sh") {
 #endif		
-		String str = LoadFile(name);
-		if (str.IsEmpty()) 
-			if (!PromptOKCancel(F(t_("File %s is empty.&") + String(t_("Do you want to continue?")), DeQtf(name))))
-				return;
-#ifdef PLATFORM_WIN32				
-		if (ToLower(str).Find("pause ") >= 0 || ToLower(str).Find("pause\t") >= 0) {
-#else
-	    if (str.Find("read ") >= 0 || str.Find("read\t") >= 0) {
-#endif	       
-			if (!PromptOKCancel(F(t_("File %s has a command to pause (pause/read).&") + String(t_("Do you want to continue?")), DeQtf(name))))
-				return;
-		}
-#ifdef PLATFORM_WIN32				
-	} else if (GetFileExt(name) == ".exe")
-#else
-	} else if (IsExecutable(name))
-#endif
-		;
-	else {
-		Array<HandledTypes> data = {{"*analysis.dat", "bemrosetta_cl", "-aqwa -r \"#PATH#\""},
-									{"*.dat",         "bemrosetta_cl", "-orca -numtries 10 -timelog 10 -rf \"#PATH#\" \"#FOLDER#\\#FILE#.sim\""}};		
-		
-		for (const HandledTypes &h : data) {
-			if (PatternMatch(h.pattern, name)) {
-				args = h.args;				
-				args.Replace("#PATH#", name);
-				args.Replace("#FOLDER#", folder);
-				args.Replace("#FILE#", file);
-				args.Replace("#EXT#", ext);
-				name = h.command;
+			String str = LoadFile(name);
+			if (str.IsEmpty()) {
+				if (!PromptOKCancel(F(t_("File %s is empty.&") + String(t_("Do you want to continue?")), DeQtf(name))))
+					return;
 			}
-		}
-		if (args.IsEmpty())
-			return;
+#ifdef PLATFORM_WIN32				
+			if (ToLower(str).Find("pause ") >= 0 || ToLower(str).Find("pause\t") >= 0) {
+#else
+	    	if (str.Find("read ") >= 0 || str.Find("read\t") >= 0) {
+#endif	       
+				if (!PromptOKCancel(F(t_("File %s has a command to pause (pause/read).&") + String(t_("Do you want to continue?")), DeQtf(name))))
+					return;
+			}
+#ifdef PLATFORM_WIN32				
+		} else if (GetFileExt(name) == ".exe")
+#else
+		} else if (IsExecutable(name))
+#endif
+			;
 	}
 
 	main.array.Add(procid, t_("Pending"), GetFileName(name), args, folder, GetUserName(), GetComputerName(), "", "",

@@ -165,7 +165,7 @@ private:
 	void OnDrag();
 	virtual void DragAndDrop(Point p, PasteClip& d);
 	bool Key(dword key, int count);
-	void DoDrop(String name);	
+	void DoDrop(String name, String args = "");	
 	
 	void OnCPUSpin();
 	void OnRAMSpin();
