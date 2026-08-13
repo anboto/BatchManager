@@ -203,7 +203,7 @@ private:
 	Vector<String> path;
 	
 	TimeCallback timeCallback;
-	Time lastScatter, lastSeries;
+	Time lastScatter, lastSeries, lastSerialize;
 };
 
 class RightDisplay : public Display {

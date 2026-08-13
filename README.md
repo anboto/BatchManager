@@ -3,7 +3,7 @@
 BatchManager runs multiple command-line processes in batch while keeping the host machine within safe operating limits. Rather than launching everyprocess at once, BatchManager queues them and starts, pauses ("freezes"), or resumes them automatically so that the total number of running processes and the total memory in use never exceed the limits you set.
 This is useful when you have many long-running jobs (simulations, batch conversions, solver runs, etc.) that would otherwise overwhelm the system's CPU or RAM if launched simultaneously.
 
-<img width="1920" height="1032" alt="image" src="https://github.com/user-attachments/assets/21179092-449f-44ff-9b83-6b2746299450" />
+<img width="1920" height="1032" alt="image" src="https://github.com/user-attachments/assets/21179092-449f-44ff-9b83-6b2746299450" />
 
 ## Adding processes
 Processes are added to BatchManager by drag and drop onto the process list, where they appear with status Pending. Two types of files are supported:

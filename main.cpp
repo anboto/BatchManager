@@ -324,7 +324,7 @@ void Main::UpdateScatters() {
 }
 
 void Main::StartCallBack() {
-	lastScatter = lastSeries = GetSysTime();
+	lastScatter = lastSeries = lastSerialize = GetSysTime();
 	timeCallback.Set(-500, THISBACK(TimerFun));
 }
 
@@ -951,6 +951,11 @@ void Main::TimerFun() {
 	main.memMaxUser  = F("%.1f", memMax/BtoGB);
 	if (main.opProcessCons)
 		main.processVal  = int(~main.sliderProcess) - cpuAvailable;
+	
+	if (now - lastSerialize > 5*60) {		// Saves status every 5 min
+		lastSerialize = now;
+		Save();
+	}
 }	
 
 
