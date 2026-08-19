@@ -878,6 +878,7 @@ void Main::TimerFun() {
 					task.process.Pause();
 				
 				main.array.Set(row, idStatus, t_("Running"));
+				main.array.Set(row, idEnd, "");
 				if (!firstTime)
 					task.console.Print(F("\n") + t_("Program is Running") + F("\n"), Green(), Yellow());
 				else
@@ -906,7 +907,7 @@ void Main::TimerFun() {
 				if (!task.process.IsPaused() && now - task.lastPausedStarted > 10) {
 					task.process.Pause();
 					task.Perform(false, false, false);					// To print pending text
-					task.console.Print(F("\n") + t_("Program is paused") + F("\n"), Green(), Yellow());	
+					task.console.Print(F("\n") + t_("Program is Paused") + F("\n"), Green(), Yellow());	
 					main.array.Set(row, idStatus, t_("Paused"));
 					task.lastPausedStarted = now;
 				}

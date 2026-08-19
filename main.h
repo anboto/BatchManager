@@ -10,6 +10,24 @@
 
 using namespace Upp;
 
+class MySpinButtons : public Ctrl {
+public:
+    void WhenUp();
+    void WhenDown();
+
+    MySpinButtons();
+    void MinMax(int min, int max);
+	virtual void SetData(const Value& data) override {this->data = data;}
+	virtual Value GetData() const 			override {return this->data;}
+	virtual void Jsonize(JsonIO& json) 		override {json ("data", data);}
+	virtual void Layout()                   override;
+	Event<> WhenAction ;
+	
+private:
+    Button up, down;
+    int min = Null, max = Null;
+    int data;
+};
 
 #define LAYOUTFILE <BatchManager/BatchManager.lay>
 #include <CtrlCore/lay.h>
@@ -220,33 +238,7 @@ public:
 
 class GreenRunningDisplay : public Display {
 public:
-    virtual void Paint(Draw& w, const Rect& r, const Value& q, Color ink, Color paper, dword style) const override {
-        bool selected = paper == SColorHighlight();
-        String text = q.ToString();
-        Color backColor;
-        if (text == t_("Running"))
-        	backColor = Color(220, 255, 220);
-        else if (text == t_("Ended"))
-        	backColor = Color(220, 255, 255);
-        else if (text == t_("Paused"))
-        	backColor = Color(255, 255, 220);
-        else
-            backColor = paper;
-       
-        Color textColor;
-        if (!selected)
-            textColor = Black();
-        else {
-            textColor = Color(80, 80, 80);
-            backColor = Blend(backColor, SColorHighlight(), 128);
-        };
-        
-        w.DrawRect(r, backColor);
-        Size sz = GetTextSize(text, StdFont());
-        int x = r.left + (r.Width()  - sz.cx) / 2;      // Horizontally centered
-        int y = r.top  + (r.Height() - sz.cy) / 2;     	// Vertically centered
-        w.DrawText(x, y, text, StdFont(), textColor);	// Text color forced to Black
-    }
+    virtual void Paint(Draw& w, const Rect& r, const Value& q, Color ink, Color paper, dword style) const override;
 };
 		
 class DialogHandledTypes : public WithHandledTypes<TopWindow> {

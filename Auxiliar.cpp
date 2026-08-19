@@ -13,6 +13,49 @@ void Main::InitButtons() {
 	main.butBottom.SetImage(Img2::BottomArrow()).SetLabel("");
 }
 
+MySpinButtons::MySpinButtons() {
+    Add(up);
+    Add(down);
+    
+    up << [=] {
+        if (IsNull(max) || int(GetData()) < max) {
+    		SetData(int(GetData()) + 1);
+    		if (WhenAction)
+    			WhenAction();
+        }
+    };
+    down << [=] {
+        if (IsNull(max) || int(GetData()) > min) {
+    		SetData(int(GetData()) - 1);
+    		if (WhenAction)
+    			WhenAction();
+        }
+    };
+}
+   
+void MySpinButtons::Layout() {
+    Size sz = GetSize();
+    if (sz.cx == 0 || sz.cy == 0)
+       return;
+    
+    int h = sz.cy/2;
+    up.SetRect(0, 0, sz.cx, h);
+    down.SetRect(0, h, sz.cx, sz.cy - h);
+    
+    Size bsz = up.GetSize();
+    up.SetImage  (Rescale(CtrlsImg::SpU(), bsz.cx/3, bsz.cy/3));
+    down.SetImage(Rescale(CtrlsImg::SpD(), bsz.cx/3, bsz.cy/3));
+}
+
+void MySpinButtons::MinMax(int min, int max) {
+	this->min = min;
+	this->max = max;
+	if (data < min)
+		data = min;
+	if (data > max)
+		data = max;
+} 
+ 
 String FormatBytes(uint64 bytes) {
     static const char* suffixes[] = { "B", "kB", "MB", "GB", "TB" };
     int suffixIndex = 0;
@@ -24,7 +67,6 @@ String FormatBytes(uint64 bytes) {
     }
     return F("%.1f %s", size, suffixes[suffixIndex]);
 }
-
 
 void AddToPATH(const Vector<String>& addFolders) {
 #ifdef PLATFORM_WIN32
@@ -62,4 +104,32 @@ void AddToPATH(const Vector<String>& addFolders) {
         newpath << pathsep << oldpath;
 
     SetEnv("PATH", newpath);
+}
+
+void GreenRunningDisplay::Paint(Draw& w, const Rect& r, const Value& q, Color ink, Color paper, dword style) const {
+    bool selected = paper == SColorHighlight();
+    String text = q.ToString();
+    Color backColor;
+    if (text == t_("Running"))
+    	backColor = Color(220, 255, 220);
+    else if (text == t_("Ended"))
+    	backColor = Color(220, 255, 255);
+    else if (text == t_("Paused"))
+    	backColor = Color(255, 255, 220);
+    else
+        backColor = paper;
+   
+    Color textColor;
+    if (!selected)
+        textColor = Black();
+    else {
+        textColor = Color(80, 80, 80);
+        backColor = Blend(backColor, SColorHighlight(), 128);
+    };
+    
+    w.DrawRect(r, backColor);
+    Size sz = GetTextSize(text, StdFont());
+    int x = r.left + (r.Width()  - sz.cx) / 2;      // Horizontally centered
+    int y = r.top  + (r.Height() - sz.cy) / 2;     	// Vertically centered
+    w.DrawText(x, y, text, StdFont(), textColor);
 }
