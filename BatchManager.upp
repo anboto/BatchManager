@@ -1,4 +1,4 @@
-description "Lanzador de lotes de programas\377";
+description "For running multiple processes under memory and hardware constraints\377";
 
 uses
 	CtrlLib,
