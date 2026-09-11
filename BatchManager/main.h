@@ -17,7 +17,7 @@ public:
 
     MySpinButtons();
     void MinMax(int min, int max);
-	virtual void SetData(const Value& data) override {this->data = data;}
+	virtual void SetData(const Value& _data) override {this->data = _data;}
 	virtual Value GetData() const 			override {return this->data;}
 	virtual void Jsonize(JsonIO& json) 		override {json ("data", data);}
 	virtual void Layout()                   override;
@@ -207,7 +207,7 @@ private:
 	
 	int idId, idStatus, idFile, idArgs, idFolder, idUser, idComputer, idStart, idEnd, idMaxTime, idTime, idMemActual, idMemMax;
 	
-	Index<String> status;
+	Index<String> statusList;
 	
 	Batch batch;
 		
@@ -226,7 +226,7 @@ private:
 
 class RightDisplay : public Display {
 public:
-    virtual void Paint(Draw& w, const Rect& r, const Value& q, Color ink, Color paper, dword style) const override {
+    virtual void Paint(Draw& w, const Rect& r, const Value& q, Color ink, Color paper, dword /*style*/) const override {
         String text = q.ToString();
         w.DrawRect(r, paper);
         Size sz = GetTextSize(text, StdFont());

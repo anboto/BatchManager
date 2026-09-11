@@ -9,8 +9,8 @@ Task::Task() {
 	Add(splitter.SizePos());
 
 	console.SetFont(Font(Font::MONOSPACE, GetStdFont().GetHeight()));
-	//console.SetReadOnly();
-	console.OnKey =[=](dword key, int count) {
+	
+	console.OnKey =[=] (dword key, int count) {
 		String skey = WString((wchar *)&key, 1).ToString();	// Keys are sent to the console
 		String str;
 		for (int i = 0; i < count; ++i)
@@ -108,9 +108,9 @@ void Task::Jsonize(JsonIO& json) {
 	int64 _memMax, _memTotal, _memRam;
 	
 	if (json.IsStoring()) {
-		_memMax = memMax;
-		_memTotal = memTotal;
-		_memRam = memRam;
+		_memMax = (int64)memMax;
+		_memTotal = (int64)memTotal;
+		_memRam = (int64)memRam;
 	}
 	
 	json
@@ -127,9 +127,9 @@ void Task::Jsonize(JsonIO& json) {
 	;
 
 	if (json.IsLoading()) {
-		memMax = _memMax;
-		memTotal = _memTotal;
-		memRam = _memRam;
+		memMax = (uint64)_memMax;
+		memTotal = (uint64)_memTotal;
+		memRam = (uint64)_memRam;
 		LoadLoaded();
 	}
 }
@@ -156,7 +156,7 @@ void Task::UpdateScatter(bool forceZoom) {
 		scatter.Refresh();
 }
 
-bool Task::OnProcess(double, const String &out, bool isEnd, bool &resetTimeout) {
+bool Task::OnProcess(double, const String &out, bool /*isEnd*/, bool &/*resetTimeout*/) {
 	console.Print(out, Blue());
 	return true;
 }

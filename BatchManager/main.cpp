@@ -16,6 +16,8 @@ GUI_APP_MAIN {
 	
 	Ctrl::SetAppName(t_("Batch process manager"));
 	
+	SetEnv("UPP_EXIT_PAUSE__", "0");		// Disables weird press enter to end message
+	
 	bool is_already_running = false;
 	
 #ifdef PLATFORM_WIN32
@@ -122,7 +124,25 @@ Main::Main() {
 	main.array.WhenDrag = THISBACK(OnDrag);
 	main.array.WhenDropInsert = THISBACK(OnDropInsert);
 	
-	main.array.WhenBar = [&](Bar &menu) {ArrayCtrlWhenBar(menu, main.array);};	
+	main.array.WhenBar = [&](Bar &menu) {
+		ArrayCtrlWhenBar(menu, main.array);
+		
+		int pending, paused, running, ended;
+		TaskCount(true, pending, paused, running, ended);
+		int numsel = pending + paused + running + ended;
+		
+		if ((numsel == 1) || (paused + running > 0) || (ended > 0) || (pending + ended > 0))
+			menu.Separator();	// Added if any additional option is added (so all lower 'if' are here)
+			
+		if (numsel == 1)
+			menu.Add(t_("Open Folder"), THISBACK(OnFolder));
+		if (paused + running > 0)
+			menu.Add(t_("End"), THISBACK(OnEnd));
+		if (ended > 0)
+			menu.Add(t_("Restart"), THISBACK(OnReStart));
+		if (pending + ended > 0)
+			menu.Add(t_("Delete"), THISBACK(OnDelete));
+	};	
 	main.array.WhenSel = THISBACK(OnSel);
 	
 	main.butUp.WhenAction = THISBACK2(OnMove, -1, -1);
@@ -265,7 +285,7 @@ bool Main::Init() {
 	
 	OnCPUSpin();
 	
-	status << t_("Running") << t_("Paused") << t_("Pending") << t_("Ended");
+	statusList << t_("Running") << t_("Paused") << t_("Pending") << t_("Ended");
 		
 	int pending, paused, running, ended;
 	TaskCount(false, pending, paused, running, ended);
@@ -418,8 +438,8 @@ void Main::OnSort() {
         order[i] = i;
 
     StableSort(order, [&](int a, int b) {
-        int ra = status.Find(main.array.Get(a, idStatus).ToString());
-        int rb = status.Find(main.array.Get(b, idStatus).ToString());
+        int ra = statusList.Find(main.array.Get(a, idStatus).ToString());
+        int rb = statusList.Find(main.array.Get(b, idStatus).ToString());
         return ra < rb;
     });
 
@@ -452,7 +472,7 @@ void Main::OnDropInsert(int line, PasteClip& d) {
 	}
 }
 
-void Main::DragAndDrop(Point p, PasteClip& d) {
+void Main::DragAndDrop(Point /*p*/, PasteClip& d) {
 	if (IsDragAndDropSource())
 		return;
 	if (AcceptFiles(d)) {
@@ -481,7 +501,7 @@ void GetFirstToken(const String& text, String& command, String &args) {
 	args = Trim(text.Mid(p.GetPos().ptr - text));
 }
 
-bool Main::Key(dword key, int count) {
+bool Main::Key(dword key, int /*count*/) {
 	if(key == K_CTRL_V) {
 		PasteClip& clip = Ctrl::Clipboard();
 		
@@ -501,24 +521,7 @@ bool Main::Key(dword key, int count) {
 				DoDrop(file);
 		}
 		Refresh();
-		
-		return true;
 	}
-	/*if (key & K_DELTA)	// Sometimes it happens
-		return true;
-	
-	int id = batch.GetShown();
-	if (id < 0)
-		return true;
-	
-	String skey = WString((wchar *)&key, 1).ToString();		// Keys are sent to the console
-	String str;
-	for (int i = 0; i < count; ++i)
-		str << skey;
-	Task &t = batch.GetIdx(id);
-	t.process.Write(str);
-	t.console.Print(str, Black());
-	*/
 	return true;
 }
 
@@ -872,7 +875,7 @@ void Main::TimerFun() {
 					String folder = main.array.Get(row, idFolder);
 					String file = main.array.Get(row, idFile);
 					String args = main.array.Get(row, idArgs);
-					double maxTime = StringToSeconds(String(main.array.Get(row, idMaxTime)));		
+					//double maxTime = StringToSeconds(String(main.array.Get(row, idMaxTime)));		
 					task.Start(folder, file, args, StringToSeconds(String(main.array.Get(row, idMaxTime))), path);
 				} else
 					task.process.Pause();

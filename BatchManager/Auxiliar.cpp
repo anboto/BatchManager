@@ -47,13 +47,13 @@ void MySpinButtons::Layout() {
     down.SetImage(Rescale(CtrlsImg::SpD(), bsz.cx/3, bsz.cy/3));
 }
 
-void MySpinButtons::MinMax(int min, int max) {
-	this->min = min;
-	this->max = max;
-	if (data < min)
-		data = min;
-	if (data > max)
-		data = max;
+void MySpinButtons::MinMax(int _min, int _max) {
+	this->min = _min;
+	this->max = _max;
+	if (data < _min)
+		data = _min;
+	if (data > _max)
+		data = _max;
 } 
  
 String FormatBytes(uint64 bytes) {
@@ -106,7 +106,7 @@ void AddToPATH(const Vector<String>& addFolders) {
     SetEnv("PATH", newpath);
 }
 
-void GreenRunningDisplay::Paint(Draw& w, const Rect& r, const Value& q, Color ink, Color paper, dword style) const {
+void GreenRunningDisplay::Paint(Draw& w, const Rect& r, const Value& q, Color /*ink*/, Color paper, dword /*style*/) const {
     bool selected = paper == SColorHighlight();
     String text = q.ToString();
     Color backColor;
@@ -124,7 +124,7 @@ void GreenRunningDisplay::Paint(Draw& w, const Rect& r, const Value& q, Color in
         textColor = Black();
     else {
         textColor = Color(80, 80, 80);
-        backColor = Blend(backColor, SColorHighlight(), 128);
+        backColor = Blend(backColor, SColorHighlight(), 64);
     };
     
     w.DrawRect(r, backColor);
