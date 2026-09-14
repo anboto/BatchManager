@@ -67,7 +67,7 @@ void Task::Start(String folder, String file, String args, double maxTime, const 
 		AddToPATH(path);
 	
 	process.WhenTimer = THISBACK(OnProcess);
-	process.Start(command, nullptr, nullptr, -1, maxTime, maxTime);
+	process.Start(command, nullptr, nullptr, -1, (int64)maxTime, (int64)maxTime);
 	
 	LoadNew();
 }

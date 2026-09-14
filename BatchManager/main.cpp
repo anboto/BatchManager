@@ -51,7 +51,7 @@ GUI_APP_MAIN {
 #endif
 	        return;
 	    }
-	}	
+	}
 	
 	Main main;
 	
@@ -269,7 +269,7 @@ bool Main::Init() {
 	double dtotal = total/btoGb;	
 	if (IsNull(~main.maxRAM)) 
 		main.maxRAM <<= int(dtotal);
-	main.maxRAM.MinMax(1, dtotal);
+	main.maxRAM.MinMax(1, (int)dtotal);
 	
 	if (IsNull(~main.sliderMemory))
 		main.sliderMemory <<= 0;
@@ -372,6 +372,8 @@ void Main::OnSetPath() {
 void Main::OnHelp() {
 	HelpWindow help;
 	help.GoTo("topic://BatchManager/help/main_en-us");
+	help.SetRect(0, 0, 1000, 800);
+	help.CenterScreen();
 	help.Execute();	
 }
 
@@ -498,7 +500,7 @@ void GetFirstToken(const String& text, String& command, String &args) {
 
 	p.SkipSpaces();
 
-	args = Trim(text.Mid(p.GetPos().ptr - text));
+	args = Trim(text.Mid((int)(p.GetPos().ptr - text)));
 }
 
 bool Main::Key(dword key, int /*count*/) {
@@ -577,10 +579,11 @@ void Main::DoDrop(String name, String args) {
 				if (!PromptOKCancel(F(t_("File %s has a command to pause (pause/read).&") + String(t_("Do you want to continue?")), DeQtf(name))))
 					return;
 			}
+		}
 #ifdef PLATFORM_WIN32				
-		} else if (GetFileExt(name) == ".exe")
+		else if (GetFileExt(name) == ".exe")
 #else
-		} else if (IsExecutable(name))
+		else if (IsExecutable(name))
 #endif
 			;
 	}
@@ -709,7 +712,7 @@ void Main::OnMaxTime() {
 		
 		main.array.Set(row, idMaxTime, SecondsToString(maxTime, 0, false, false, true, false, true));	
 		if (status == t_("Paused") || (status == t_("Running")))
-			batch.GetId(id).process.SetMaxRunTime(maxTime);
+			batch.GetId(id).process.SetMaxRunTime((int64)maxTime);
 	}
 }		   
 
