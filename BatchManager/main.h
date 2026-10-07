@@ -92,10 +92,21 @@ public:
 		return task;
 	}
 	void Remove(int id)   {tasks.Remove(GetIndex(id));}
+	void RemoveIfExists(int id) {
+		int idd = GetIndex(id);
+		if (idd >= 0 & idd < tasks.size())
+			tasks.Remove(idd);
+	}
 	Task &GetId(int id)   {return tasks[GetIndex(id)];}
 	Task &GetIdx(int idx) {return tasks[idx];}
+	int GetIdxId(int i)   {return tasks[i].id;}
 	int size()			  {return tasks.size();}
 	void Clear()		  {tasks.Clear();}
+	void ClearRealized()  {
+		for (int i = tasks.size()-1; i >= 0; --i)
+			if (!tasks[i].process.IsRunning())
+				tasks.Remove(i);
+	}
 	
 	int GetShown() {
 		for (int i = 0; i < tasks.size(); ++i) {
@@ -201,6 +212,8 @@ private:
 	void InitButtons();
 	void UpdateLabs();
 	
+	int FindIdArray(int id);
+		
 	Index<int> GetSelectedRows();
 	Index<int> GetSelectedIds();
 	void SetSelectedIds(const Index<int> &ids);

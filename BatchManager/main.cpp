@@ -210,12 +210,18 @@ void Main::Jsonize(JsonIO& json) {
 		}
 		jsonVersion = 1.1;
 		
-		procid = 0;
+		// Do not load ids duplicated
+		int rowarray = 0;
 		for (int row = 0; row < doneData.GetCount(); ++row)
-			main.array.Set(row, doneData[row]);
-		for (int row = 0; row < batch.size(); ++row)
-			output.batchesArea.Add(batch.GetIdx(row).SetParent(*this).SizePos());
-
+			if (FindIdArray(doneData[row][0]) < 0)
+				main.array.Set(rowarray++, doneData[row]);
+		
+		// Do not load batch data if it is not in the array
+		for (int row = 0; row < batch.size(); ++row) {
+			if (FindIdArray(batch.GetIdxId(row)) >= 0)
+				output.batchesArea.Add(batch.GetIdx(row).SetParent(*this).SizePos());
+		}
+		
 		procid = batch.MaxId()+1;
 		
 		main.opMemoryCons  = IsNull(iopMemoryCons)  ? true : iopMemoryCons > 0;
@@ -353,9 +359,6 @@ void Main::StopCallBack() {
 }
 
 void Main::OnHandledTypes() {
-	//Array<HandledTypes> data = {{"*analysis.dat", "bemrosetta_cl", "-aqwa -r \"#PATH#\""},
-	//						{"*.dat",         "bemrosetta_cl", "-orca -numtries 10 -timelog 10 -rf \"#PATH#\" \"#FOLDER#\\#FILE#.sim\""}};	
-									
     DialogHandledTypes dlg;
     dlg.Load(handledTypes);
     if(dlg.Execute() == IDOK)
@@ -369,8 +372,31 @@ void Main::OnSetPath() {
         dlg.Save(path);	
 }
 
+static String GetSystemInfo() {
+	String name, mode;
+	Time date;
+	int version, bits;
+	GetCompilerInfo(name, version, date, mode, bits);
+
+	String systemInfo;
+	systemInfo << F(t_("Binary is at '%s'"), GetExeFilePath());
+	systemInfo << "\n" << F(t_("Build date is %s"), F(date));
+	systemInfo << "\n" << F(t_("Compiler is %s, version %d, mode %s, %d bits"), ToUpper(name), version, ToUpper(mode), bits);
+	
+	return systemInfo;
+}
+
+class HelpWindowInfo : public HelpWindow {
+public:
+    virtual Topic AcquireTopic(const String& topic) {
+        Topic t = HelpWindow::AcquireTopic(topic);   
+        t.text.Replace("SYSTEMINFO", DeQtf(GetSystemInfo()));
+        return t;
+    }
+};
+
 void Main::OnHelp() {
-	HelpWindow help;
+	HelpWindowInfo help;
 	help.GoTo("topic://BatchManager/help/main_en-us");
 	help.SetRect(0, 0, 1000, 800);
 	help.CenterScreen();
@@ -543,11 +569,11 @@ void Main::DoDrop(String name, String args) {
 	String file = GetFileTitle(name);
 	String ext = GetFileExt(name).Mid(1);
 
-	Array<HandledTypes> data = {{"*analysis.dat", "bemrosetta_cl", "-aqwa -r \"#PATH#\""},
-								{"*.dat",         "bemrosetta_cl", "-orca -numtries 10 -timelog 10 -rf \"#PATH#\" \"#FOLDER#\\#FILE#.sim\""}};		
+//	Array<HandledTypes> data = {{"*analysis.dat", "bemrosetta_cl", "-aqwa -r \"#PATH#\""},
+//								{"*.dat",         "bemrosetta_cl", "-orca -numtries 10 -timelog 10 -rf \"#PATH#\" \"#FOLDER#\\#FILE#.sim\""}};		
 	
 	bool matched = false;
-	for (const HandledTypes &h : data) {
+	for (const HandledTypes &h : handledTypes) {
 		if (PatternMatch(h.pattern, name)) {
 			args = h.args;				
 			args.Replace("#PATH#", name);
@@ -587,6 +613,9 @@ void Main::DoDrop(String name, String args) {
 #endif
 			;
 	}
+	
+	while (FindIdArray(procid) >= 0)		// Theoretically unnecessary
+		procid++;
 
 	main.array.Add(procid, t_("Pending"), GetFileName(name), args, folder, GetUserName(), GetComputerName(), "", "",
 				SecondsToString(StringToSeconds(String(~main.maxTime)), 0, false, false, true, false, true));
@@ -623,9 +652,10 @@ void Main::SetSelectedIds(const Index<int> &ids) {
 }
 
 void Main::ClearRealized() {
-	for (int row = main.array.GetCount(); row >= 0; --row) {
+	Vector<int> batchIdToRemove;
+	for (int row = main.array.GetCount()-1; row >= 0; --row) {
 		if (String(main.array.Get(row, idStatus)) == t_("Ended")) {
-			batch.Remove(main.array.Get(row, idId));
+			batch.RemoveIfExists(main.array.Get(row, idId));		// Theoretically unnecessary
 			main.array.Remove(row);
 		}
 	}
@@ -683,7 +713,7 @@ void Main::OnDelete() {
 		int row = sels[i];
 		String status = String(main.array.Get(row, idStatus));
 		if (status == t_("Ended") || status == t_("Pending")) {
-			batch.Remove(main.array.Get(row, idId));
+			batch.RemoveIfExists(main.array.Get(row, idId));		// Theoretically unnecessary
 			main.array.Remove(row);
 		} else
 			domessage = true;
@@ -965,4 +995,10 @@ void Main::TimerFun() {
 	}
 }	
 
-
+int Main::FindIdArray(int id) {
+	for (int row = 0; row < main.array.GetCount(); ++row) {
+		if (main.array.Get(row, idId) == id)
+			return row;
+	}
+	return -1;
+}

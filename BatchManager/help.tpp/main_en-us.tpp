@@ -192,14 +192,24 @@ listed to override a more general one for particular file names.]]
 that are substituted with the dropped file`'s details (see below).]]}}&]
 [s0;#b17;a17;*+93 &]
 [s0;#b17;a17; [*+93 Placeholders available in Arguments:]&]
-[s0;#b17;a17; [+93 #PATH# — the full path of the dropped file.]&]
+[s0;#l256;i96;b17;a17;O0; [+93 #PATH# — the full path of the dropped 
+file.]&]
 [s0;#l250;i93;b17;a17;O0; [+93 #FOLDER# — the folder containing the 
 dropped file.]&]
 [s0;#l250;i93;b17;a17;O0; [+93 #FILE# — the file name without its 
 extension.]&]
+[s0;#l250;i93;b17;a17;O0; [+93 #EXT# — the file name extension, without 
+the `'.`'.]&]
 [s0;#b17;a17; [+93 Rows are matched in order/specificity, so a pattern 
 like `*analysis.dat can be given its own command and arguments 
 distinct from the more general `*.dat fallback below it.]&]
+[s0;#b17;a17;+93 &]
+[s0;#b17;a17; [+93 For example, to convert any .mp4 file into a .mp3 
+using ][^https`:`/`/ffmpeg`.org`/^+93 ffmpeg][+93 , we could do:]&]
+[s0;#l224;i150;b17;a17;O0; [+93 Pattern: ][C+93 `*.mp4]&]
+[s0;#l224;i150;b17;a17;O0; [+93 Command: ][C+93 ffmpeg]&]
+[s0;#l224;i150;b17;a17;O0; [+93 Arguments: ][C+93 `-i  `"#PATH#`" `"#FOLDER#`\#FILE#.mp3`"
+]&]
 [s0;#b17;a17;+93 &]
 [s0;#b17;a17; [*+108 Set PATH]&]
 [s0;#b17;a17; [+93 Opens the ][*+93 Add folders to PATH][+93  dialog, where 
@@ -233,4 +243,6 @@ use ][*+93 Delete Ended][+93  to clear them from the list.]&]
 [s0; [*+139 License]&]
 [s0;%% [+93 GPL`-3.0`-or`-later]&]
 [s0;%% [+93 Copyright 2025 `- 2026, the BatchManager author]&]
+[s0;+93%% &]
+[s0;%% [+93 SYSTEMINFO]&]
 [s0;+93%% ]]
