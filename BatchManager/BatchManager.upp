@@ -17,6 +17,7 @@ file
 	main.rc,
 	main.iml,
 	help.tpp,
+	BatchManager.t,
 	Copying;
 
 mainconfig

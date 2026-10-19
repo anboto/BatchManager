@@ -9,10 +9,11 @@
 #define TOPICFILE <BatchManager/help.tpp/all.i>
 #include <Core/topic_group.h>
 
- 
+#define TFILE <BatchManager/BatchManager.t>
+#include <Core/t.h>
+   
 GUI_APP_MAIN {
 	StdLogSetup(LOG_FILE | LOG_TIMESTAMP | LOG_APPEND);
-	SetLanguage(SetLNGCharset(GetSystemLNG(), CHARSET_UTF8));	
 	
 	Ctrl::SetAppName(t_("Batch process manager"));
 	
@@ -85,7 +86,13 @@ GUI_APP_MAIN {
 	main.DoClose(false);
 }
 
-Main::Main() {
+void Main::Load() {
+	// Load configuration is the first to do
+	String dataDirectory = AppendFileName(GetAppDataFolder(), "BatchManager");
+	RealizeDirectory(dataDirectory);
+	configFile = AppendFileName(dataDirectory, "BatchManager.json");
+	LoadFromJsonFile(*this, configFile);
+	
 	Title(t_("BatchManager: For running multiple processes under memory and CPU constraints"));
 	Sizeable().Zoomable();
 	Icon(Img::BatchManager_icon_16(), Img::BatchManager_icon_256());
@@ -202,6 +209,7 @@ void Main::Jsonize(JsonIO& json) {
 		("opShowRAM",    output.opShowRAM)
 		("opShowPaging", output.opShowPaging)
 		("opRefresh",    output.opShowMemory)
+		("currentLanguage", currentLanguage)
 	;
 	if (json.IsLoading()) {
 		if (IsNull(jsonVersion)) {
@@ -209,6 +217,10 @@ void Main::Jsonize(JsonIO& json) {
 			Clear();
 		}
 		jsonVersion = 1.1;
+		
+		if (!IsNum(currentLanguage) || currentLanguage < 0 || currentLanguage >= languages.size())
+			currentLanguage = 0;
+		SetLanguage(SetLNGCharset(LNGFromText(languages[currentLanguage]), CHARSET_UTF8));	
 		
 		// Do not load ids duplicated
 		int rowarray = 0;
@@ -238,13 +250,6 @@ void Main::Clear() {
 	main.sliderMemory <<= Null;
 	main.sliderProcess <<= Null;
 	batch.Clear();
-}
-
-void Main::Load() {
-	String dataDirectory = AppendFileName(GetAppDataFolder(), "BatchManager");
-	RealizeDirectory(dataDirectory);
-	configFile = AppendFileName(dataDirectory, "BatchManager.json");
-	LoadFromJsonFile(*this, configFile);
 }
 
 void Main::Save() {
@@ -304,11 +309,18 @@ bool Main::Init() {
 	main.labelDrop.Show(main.array.GetCount() == 0);
 	main.rectangleDrop.Show(main.array.GetCount() == 0);
 	
-	main.butOptions << [=] {
+	main.butOptions << [&] {
 		MenuBar menu;
 		menu.LeftGap(0);
 		menu.Add(t_("Managed file types"), [=]{OnHandledTypes();});
 		menu.Add(t_("Set PATH"),           [=]{OnSetPath();});
+		menu.Sub(t_("Language"), [&](Bar& bar) {
+			for(int i = 0; i < languages.size(); i++)
+				bar.Add(languages[i], [=] {
+					currentLanguage = i; 
+					Exclamation(F(t_("The language in the next start will be %s"), languages[i]));
+				}).Radio(i == currentLanguage);
+		});
 		menu.Add(t_("Help"),               [=]{OnHelp();});
 		menu.Execute();
 	};

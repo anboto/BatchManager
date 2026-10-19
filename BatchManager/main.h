@@ -163,7 +163,7 @@ struct HandledTypes {
 class Main : public TopWindow {
 typedef Main CLASSNAME;
 public:
-	Main();
+	Main() {}
 	virtual ~Main();
 
 	void Load();
@@ -235,6 +235,9 @@ private:
 	
 	TimeCallback timeCallback;
 	Time lastScatter, lastSeries, lastSerialize;
+	
+	Vector<const char *> languages = {"en-US", "ca-ES", "de-DE", "es-ES", "eu-ES", "fr-FR", "pt-PT", "zh-CN"};
+	int currentLanguage = 0;
 };
 
 class RightDisplay : public Display {
