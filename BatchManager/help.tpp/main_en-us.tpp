@@ -219,6 +219,11 @@ depends on DLLs, that aren`'t in the system`'s normal PATH —
 add the folder here and BatchManager will include it when launching 
 processes, alongside the original system PATH.]&]
 [s0;#b17;a17;+93 &]
+[s0;#b17;a17; [*+108 Language]&]
+[s0;#b17;a17; [+93 This allows message texts to be displayed in the 
+specified language. If you would like to see another language 
+included, please request it from the developers.]&]
+[s0;#b17;a17;+93 &]
 [s0;#b17;a17; [*+108 Help]&]
 [s0;#b17;a17; [+93 Shows this help.]&]
 [s0;#b17;a17;+93 &]

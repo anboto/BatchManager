@@ -236,7 +236,7 @@ private:
 	TimeCallback timeCallback;
 	Time lastScatter, lastSeries, lastSerialize;
 	
-	Vector<const char *> languages = {"en-US", "ca-ES", "de-DE", "es-ES", "eu-ES", "fr-FR", "pt-PT", "zh-CN"};
+	Vector<const char *> languages = {"en-US", "ca-ES", "de-DE", "es-ES", "eu-ES", "fr-FR", "ga-IE", "pt-PT", "zh-CN"};
 	int currentLanguage = 0;
 };
 
